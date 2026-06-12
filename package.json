@@ -1,0 +1,27 @@
+{
+  "name": "daraja-toolkit",
+  "version": "1.0.0",
+  "description": "Local M-PESA Daraja development toolkit — production-accurate STK callback simulation and offline recovery",
+  "main": "lib/simulator.js",
+  "bin": {
+    "daraja": "./bin/daraja.js"
+  },
+  "type": "module",
+  "scripts": {
+    "test": "node bin/daraja.js trigger --amount 100 --phone 0712345678 --port 3000"
+  },
+  "keywords": [
+    "mpesa",
+    "daraja",
+    "safaricom",
+    "stk",
+    "callback",
+    "simulator",
+    "kenya"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^12.1.0"
+  }
+}
