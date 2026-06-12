@@ -1,12 +1,10 @@
 /**
  * dashboard.js
  * Local HTTP server that serves a browser UI for the toolkit.
- * Lets you trigger callbacks, view queue, replay — all in browser.
  */
 
 import http from "http";
-import { simulate } from "./simulator.js";
-import { getQueue, replayAll, showStatus } from "./replay.js";
+import { getQueue } from "./replay.js";
 import * as log from "./logger.js";
 
 const HTML = `<!DOCTYPE html>
@@ -14,109 +12,430 @@ const HTML = `<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Daraja Toolkit — Local Dashboard</title>
+<title>DarajaSim — Local Dashboard</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Courier New', monospace; background: #0d1117; color: #c9d1d9; min-height: 100vh; }
-  .header { background: #161b22; border-bottom: 1px solid #30363d; padding: 20px 40px; display: flex; align-items: center; gap: 16px; }
-  .logo { font-size: 22px; font-weight: bold; color: #58a6ff; }
-  .badge { background: #1f6feb; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 99px; }
-  .tagline { color: #8b949e; font-size: 13px; margin-top: 4px; }
-  .main { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-  .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 24px; }
-  .card h2 { font-size: 15px; color: #58a6ff; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-  label { font-size: 12px; color: #8b949e; display: block; margin-bottom: 6px; margin-top: 14px; }
-  input, select { width: 100%; background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; padding: 8px 12px; border-radius: 6px; font-family: inherit; font-size: 13px; }
-  input:focus, select:focus { outline: none; border-color: #58a6ff; }
-  button { margin-top: 16px; width: 100%; padding: 10px; border: none; border-radius: 6px; font-family: inherit; font-size: 13px; cursor: pointer; font-weight: bold; transition: opacity 0.2s; }
-  button:hover { opacity: 0.85; }
-  .btn-primary { background: #238636; color: #fff; }
-  .btn-danger { background: #da3633; color: #fff; }
-  .btn-secondary { background: #1f6feb; color: #fff; }
-  .btn-warning { background: #9e6a03; color: #fff; }
-  .log { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 16px; height: 280px; overflow-y: auto; font-size: 12px; line-height: 1.7; }
-  .log-entry { padding: 2px 0; border-bottom: 1px solid #21262d; }
-  .log-entry:last-child { border-bottom: none; }
-  .ok { color: #3fb950; }
-  .fail { color: #f85149; }
-  .info { color: #58a6ff; }
-  .warn { color: #d29922; }
-  .queue-list { margin-top: 12px; }
-  .queue-item { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px; margin-bottom: 8px; font-size: 12px; }
-  .queue-item .scenario { color: #d29922; font-weight: bold; }
-  .queue-item .meta { color: #8b949e; margin-top: 4px; }
-  .empty { color: #8b949e; font-size: 13px; text-align: center; padding: 24px; }
-  .full-width { grid-column: 1 / -1; }
-  .scenarios-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
-  .scenario-btn { margin-top: 0; padding: 8px; font-size: 12px; }
-  .s-success { background: #238636; color: #fff; }
-  .s-cancel { background: #da3633; color: #fff; }
-  .s-timeout { background: #9e6a03; color: #fff; }
-  .s-insufficient { background: #6e40c9; color: #fff; }
-  .s-wrong_pin { background: #b45309; color: #fff; }
-  .s-duplicate { background: #1f6feb; color: #fff; }
-  .stats { display: flex; gap: 16px; margin-bottom: 20px; }
-  .stat { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px 20px; flex: 1; text-align: center; }
-  .stat-num { font-size: 28px; font-weight: bold; color: #58a6ff; }
-  .stat-label { font-size: 11px; color: #8b949e; margin-top: 4px; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #fff;
+    --surface: #f6f8fa;
+    --border: #e4e7eb;
+    --border-strong: #d0d5dd;
+    --text: #101828;
+    --muted: #667085;
+    --subtle: #98a2b3;
+    --green: #079455;
+    --green-bg: #dcfae6;
+    --red: #d92d20;
+    --red-bg: #fee4e2;
+    --orange: #b54708;
+    --orange-bg: #fef0c7;
+    --blue: #1570ef;
+    --blue-bg: #eff8ff;
+    --purple: #6941c6;
+    --purple-bg: #f4f3ff;
+    --radius: 8px;
+    --shadow: 0 1px 3px rgba(16,24,40,.06), 0 1px 2px rgba(16,24,40,.04);
+    --shadow-md: 0 4px 8px -2px rgba(16,24,40,.08), 0 2px 4px -2px rgba(16,24,40,.04);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* NAV */
+  nav {
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .nav-logo {
+    width: 28px;
+    height: 28px;
+    background: #16a34a;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .nav-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+  .nav-title span { color: var(--red); }
+  .badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 99px;
+    background: var(--green-bg);
+    color: var(--green);
+    border: 1px solid #a9efc5;
+  }
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    display: inline-block;
+  }
+
+  /* LAYOUT */
+  .page { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+  /* STATS ROW */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .stat {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    background: #fff;
+    box-shadow: var(--shadow);
+  }
+  .stat-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin-bottom: 8px;
+  }
+  .stat-val {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .stat-val.green { color: var(--green); }
+  .stat-val.red { color: var(--red); }
+  .stat-val.blue { color: var(--blue); }
+
+  /* GRID */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .full { grid-column: 1 / -1; }
+
+  /* CARD */
+  .card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: #fff;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title .icon {
+    width: 20px; height: 20px;
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+  }
+  .card-body { padding: 20px; }
+
+  /* FORM */
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 5px;
+  }
+  input {
+    width: 100%;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--text);
+    background: #fff;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  input:focus {
+    outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(21,112,239,.12);
+  }
+  .field-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* SCENARIOS */
+  .scenarios-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 8px;
+    margin-top: 18px;
+  }
+  .scenarios-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .scen-btn {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all .15s;
+    background: #fff;
+    color: var(--text);
+  }
+  .scen-btn:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  .scen-btn .dot-s { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .s-success .dot-s { background: var(--green); }
+  .s-cancel .dot-s { background: var(--red); }
+  .s-timeout .dot-s { background: var(--orange); }
+  .s-insufficient .dot-s { background: var(--purple); }
+  .s-wrong_pin .dot-s { background: #b45309; }
+  .s-duplicate .dot-s { background: var(--blue); }
+
+  /* LOG */
+  .log {
+    height: 320px;
+    overflow-y: auto;
+    font-size: 12px;
+    font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+    line-height: 1.8;
+    padding: 4px 0;
+  }
+  .log-entry {
+    padding: 3px 0;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    border-bottom: 1px solid var(--surface);
+  }
+  .log-time { color: var(--subtle); flex-shrink: 0; font-size: 11px; padding-top: 1px; }
+  .log-msg { color: var(--text); flex: 1; }
+  .log-msg.ok { color: var(--green); }
+  .log-msg.fail { color: var(--red); }
+  .log-msg.warn { color: var(--orange); }
+  .log-msg.info { color: var(--blue); }
+
+  /* QUEUE */
+  .queue-item {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    background: var(--surface);
+  }
+  .queue-item:last-child { margin-bottom: 0; }
+  .queue-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .queue-scenario {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 99px;
+    background: var(--orange-bg);
+    color: var(--orange);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .queue-url { font-size: 12px; color: var(--text); font-family: monospace; }
+  .queue-meta { font-size: 11px; color: var(--muted); }
+  .empty-state {
+    text-align: center;
+    padding: 32px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .empty-state .empty-icon { font-size: 24px; margin-bottom: 8px; }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .btn:hover { opacity: .88; }
+  .btn-primary { background: #16a34a; color: #fff; }
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-ghost {
+    background: #fff;
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow);
+  }
+  .btn-ghost:hover { background: var(--surface); opacity: 1; }
+  .queue-actions { display: flex; gap: 8px; margin-top: 14px; }
 </style>
 </head>
 <body>
-<div class="header">
-  <div>
-    <div class="logo">🛠 Daraja Toolkit <span class="badge">LOCAL</span></div>
-    <div class="tagline">Production-accurate STK callback simulator — no ngrok, no HTTPS needed</div>
+
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">D</div>
+    <span class="nav-title">Daraja<span>Sim</span></span>
+    <span class="badge">Local</span>
   </div>
-</div>
-<div class="main">
+  <div class="nav-right">
+    <span class="dot"></span>
+    Simulator running
+  </div>
+</nav>
+
+<div class="page">
   <div class="stats">
-    <div class="stat"><div class="stat-num" id="stat-sent">0</div><div class="stat-label">Callbacks Sent</div></div>
-    <div class="stat"><div class="stat-num" id="stat-ok">0</div><div class="stat-label">Accepted (200)</div></div>
-    <div class="stat"><div class="stat-num" id="stat-fail">0</div><div class="stat-label">Failed</div></div>
-    <div class="stat"><div class="stat-num" id="stat-queue">0</div><div class="stat-label">In Queue</div></div>
+    <div class="stat">
+      <div class="stat-label">Callbacks Sent</div>
+      <div class="stat-val" id="stat-sent">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Accepted</div>
+      <div class="stat-val green" id="stat-ok">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Failed</div>
+      <div class="stat-val red" id="stat-fail">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">In Queue</div>
+      <div class="stat-val blue" id="stat-queue">0</div>
+    </div>
   </div>
 
   <div class="grid">
     <!-- Trigger -->
     <div class="card">
-      <h2>⚡ Trigger Callback</h2>
-      <label>Callback URL (your local server)</label>
-      <input id="url" type="text" value="http://localhost:3000/api/mpesa/callback" />
-      <label>Amount (KES)</label>
-      <input id="amount" type="number" value="100" min="1" />
-      <label>Phone Number</label>
-      <input id="phone" type="text" value="0712345678" />
-      <label>Delay (ms) — simulates Safaricom processing time</label>
-      <input id="delay" type="number" value="2000" min="0" />
+      <div class="card-header">
+        <div class="card-title">
+          <div class="icon" style="background:#dcfae6;color:#079455;">⚡</div>
+          Trigger Callback
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label>Callback URL</label>
+          <input id="url" type="text" value="http://localhost:3000/api/mpesa/callback" />
+          <div class="field-hint">Your local server endpoint</div>
+        </div>
+        <div class="field" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label>Amount (KES)</label>
+            <input id="amount" type="number" value="100" min="1" />
+          </div>
+          <div>
+            <label>Phone</label>
+            <input id="phone" type="text" value="0712345678" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Delay (ms)</label>
+          <input id="delay" type="number" value="2000" min="0" />
+          <div class="field-hint">Simulates Safaricom processing time</div>
+        </div>
 
-      <label>Quick Scenarios</label>
-      <div class="scenarios-grid">
-        <button class="scenario-btn s-success" onclick="trigger('success')">✓ Success</button>
-        <button class="scenario-btn s-cancel" onclick="trigger('cancel')">✗ Cancel</button>
-        <button class="scenario-btn s-timeout" onclick="trigger('timeout')">⏱ Timeout</button>
-        <button class="scenario-btn s-insufficient" onclick="trigger('insufficient')">💸 No Balance</button>
-        <button class="scenario-btn s-wrong_pin" onclick="trigger('wrong_pin')">🔒 Wrong PIN</button>
-        <button class="scenario-btn s-duplicate" onclick="trigger('duplicate')">⊕ Duplicate</button>
+        <div class="scenarios-label">Scenarios</div>
+        <div class="scenarios-grid">
+          <button class="scen-btn s-success" onclick="trigger('success')"><span class="dot-s"></span>Success</button>
+          <button class="scen-btn s-cancel" onclick="trigger('cancel')"><span class="dot-s"></span>Cancel</button>
+          <button class="scen-btn s-timeout" onclick="trigger('timeout')"><span class="dot-s"></span>Timeout</button>
+          <button class="scen-btn s-insufficient" onclick="trigger('insufficient')"><span class="dot-s"></span>No Balance</button>
+          <button class="scen-btn s-wrong_pin" onclick="trigger('wrong_pin')"><span class="dot-s"></span>Wrong PIN</button>
+          <button class="scen-btn s-duplicate" onclick="trigger('duplicate')"><span class="dot-s"></span>Duplicate</button>
+        </div>
       </div>
     </div>
 
     <!-- Log -->
     <div class="card">
-      <h2>📋 Request Log</h2>
-      <div class="log" id="log">
-        <div class="log-entry info">Dashboard ready. Trigger a callback to begin.</div>
+      <div class="card-header">
+        <div class="card-title">
+          <div class="icon" style="background:#eff8ff;color:#1570ef;">📋</div>
+          Request Log
+        </div>
+      </div>
+      <div class="card-body" style="padding:12px 16px;">
+        <div class="log" id="log">
+          <div class="log-entry">
+            <span class="log-time">${new Date().toLocaleTimeString()}</span>
+            <span class="log-msg info">Dashboard ready — trigger a callback to begin</span>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Queue -->
-    <div class="card full-width">
-      <h2>🔁 Callback Queue (failed — pending replay)</h2>
-      <div class="queue-list" id="queue-list">
-        <div class="empty">No failed callbacks in queue.</div>
+    <div class="card full">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="icon" style="background:#fef0c7;color:#b54708;">🔁</div>
+          Callback Queue
+        </div>
+        <span style="font-size:11px;color:var(--muted);">Failed callbacks pending replay</span>
       </div>
-      <button class="btn-secondary" style="margin-top:12px;width:auto;padding:8px 20px;" onclick="replay()">↺ Replay All</button>
-      <button class="btn-danger" style="margin-top:12px;margin-left:8px;width:auto;padding:8px 20px;" onclick="clearQueue()">✕ Clear Queue</button>
+      <div class="card-body">
+        <div id="queue-list">
+          <div class="empty-state">
+            <div class="empty-icon">✓</div>
+            No failed callbacks — queue is clear
+          </div>
+        </div>
+        <div class="queue-actions">
+          <button class="btn btn-primary" onclick="replay()">↺ Replay All</button>
+          <button class="btn btn-ghost" onclick="clearQueue()">Clear Queue</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -127,9 +446,9 @@ const HTML = `<!DOCTYPE html>
   function addLog(msg, cls = 'info') {
     const el = document.getElementById('log');
     const entry = document.createElement('div');
-    entry.className = 'log-entry ' + cls;
+    entry.className = 'log-entry';
     const t = new Date().toLocaleTimeString();
-    entry.textContent = '[' + t + '] ' + msg;
+    entry.innerHTML = '<span class="log-time">' + t + '</span><span class="log-msg ' + cls + '">' + msg + '</span>';
     el.appendChild(entry);
     el.scrollTop = el.scrollHeight;
   }
@@ -146,10 +465,8 @@ const HTML = `<!DOCTYPE html>
     const amount = document.getElementById('amount').value;
     const phone = document.getElementById('phone').value;
     const delay = document.getElementById('delay').value;
-    addLog('Triggering scenario: ' + scenario + ' → ' + url, 'info');
-    sent++;
-    updateStats();
-
+    addLog('Triggering ' + scenario + ' → ' + url, 'info');
+    sent++; updateStats();
     try {
       const res = await fetch('/api/trigger', {
         method: 'POST',
@@ -157,17 +474,9 @@ const HTML = `<!DOCTYPE html>
         body: JSON.stringify({ url, scenario, amount: Number(amount), phone, delay: Number(delay) })
       });
       const data = await res.json();
-      if (data.success) {
-        addLog('✓ Callback sent. Server responded: ' + data.serverStatus, 'ok');
-        ok++;
-      } else {
-        addLog('✗ Callback failed: ' + data.error + '. Queued for replay.', 'fail');
-        fail++;
-      }
-    } catch (e) {
-      addLog('✗ Toolkit error: ' + e.message, 'fail');
-      fail++;
-    }
+      if (data.success) { addLog('Callback accepted — server responded ' + data.serverStatus, 'ok'); ok++; }
+      else { addLog('Callback failed: ' + data.error + ' — queued for replay', 'fail'); fail++; }
+    } catch (e) { addLog('Error: ' + e.message, 'fail'); fail++; }
     updateStats();
   }
 
@@ -177,30 +486,33 @@ const HTML = `<!DOCTYPE html>
       const { queue } = await res.json();
       document.getElementById('stat-queue').textContent = queue.length;
       const el = document.getElementById('queue-list');
-      if (queue.length === 0) {
-        el.innerHTML = '<div class="empty">No failed callbacks in queue.</div>';
+      if (!queue.length) {
+        el.innerHTML = '<div class="empty-state"><div class="empty-icon">✓</div>No failed callbacks — queue is clear</div>';
         return;
       }
       el.innerHTML = queue.map(e => \`
         <div class="queue-item">
-          <span class="scenario">\${e.scenario.toUpperCase()}</span> → \${e.url}
-          <div class="meta">Failed: \${new Date(e.failedAt).toLocaleString()} — \${e.reason} | Attempts: \${e.attempts}</div>
+          <div class="queue-row">
+            <span class="queue-scenario">\${e.scenario}</span>
+            <span class="queue-url">\${e.url}</span>
+          </div>
+          <div class="queue-meta">Failed \${new Date(e.failedAt).toLocaleString()} · \${e.reason} · \${e.attempts} attempt(s)</div>
         </div>
       \`).join('');
     } catch {}
   }
 
   async function replay() {
-    addLog('Replaying all queued callbacks...', 'warn');
+    addLog('Replaying queued callbacks...', 'warn');
     const res = await fetch('/api/replay', { method: 'POST' });
     const data = await res.json();
-    addLog('Replay complete: ' + data.succeeded + ' succeeded, ' + data.failed + ' still failing.', data.failed === 0 ? 'ok' : 'warn');
+    addLog('Replay done — ' + data.succeeded + ' succeeded, ' + data.failed + ' still failing', data.failed === 0 ? 'ok' : 'warn');
     loadQueue();
   }
 
   async function clearQueue() {
     await fetch('/api/queue', { method: 'DELETE' });
-    addLog('Queue cleared.', 'warn');
+    addLog('Queue cleared', 'warn');
     loadQueue();
   }
 
@@ -214,30 +526,24 @@ export async function startDashboard(port = 4000) {
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://localhost:${port}`);
 
-    // Serve dashboard UI
     if (req.method === "GET" && url.pathname === "/") {
       res.writeHead(200, { "Content-Type": "text/html" });
       res.end(HTML);
       return;
     }
 
-    // API: Trigger callback
     if (req.method === "POST" && url.pathname === "/api/trigger") {
       let body = "";
       req.on("data", c => body += c);
       req.on("end", async () => {
         try {
           const opts = JSON.parse(body);
-          let serverStatus = null;
-          let succeeded = false;
-          let errorMsg = null;
-
           const { SCENARIOS } = await import("./scenarios.js");
           const fn = SCENARIOS[opts.scenario];
           if (!fn) throw new Error(`Unknown scenario: ${opts.scenario}`);
           const result = fn(opts.amount, opts.phone);
           const payload = Array.isArray(result) ? result[0] : result;
-
+          let serverStatus = null, succeeded = false, errorMsg = null;
           try {
             const r = await fetch(opts.url, {
               method: "POST",
@@ -247,10 +553,7 @@ export async function startDashboard(port = 4000) {
             });
             serverStatus = r.status;
             succeeded = r.ok;
-          } catch (e) {
-            errorMsg = e.message;
-          }
-
+          } catch (e) { errorMsg = e.message; }
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ success: succeeded, serverStatus, error: errorMsg }));
         } catch (e) {
@@ -261,14 +564,12 @@ export async function startDashboard(port = 4000) {
       return;
     }
 
-    // API: Get queue
     if (req.method === "GET" && url.pathname === "/api/queue") {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ queue: getQueue() }));
       return;
     }
 
-    // API: Clear queue
     if (req.method === "DELETE" && url.pathname === "/api/queue") {
       const { clearQueue } = await import("./replay.js");
       clearQueue();
@@ -277,7 +578,6 @@ export async function startDashboard(port = 4000) {
       return;
     }
 
-    // API: Replay
     if (req.method === "POST" && url.pathname === "/api/replay") {
       let succeeded = 0, failed = 0;
       const queue = getQueue();

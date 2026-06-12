@@ -42,12 +42,12 @@ export function divider() {
 
 export function banner() {
   console.log(`
-${C.bold}${C.cyan}  ██████╗  █████╗ ██████╗  █████╗      ██╗ █████╗ ${C.reset}
-${C.bold}${C.cyan}  ██╔══██╗██╔══██╗██╔══██╗██╔══██╗     ██║██╔══██╗${C.reset}
-${C.bold}${C.cyan}  ██║  ██║███████║██████╔╝███████║     ██║███████║${C.reset}
-${C.bold}${C.cyan}  ██║  ██║██╔══██║██╔══██╗██╔══██║██   ██║██╔══██║${C.reset}
-${C.bold}${C.cyan}  ██████╔╝██║  ██║██║  ██║██║  ██║╚█████╔╝██║  ██║${C.reset}
-${C.bold}${C.cyan}  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚════╝ ╚═╝  ╚═╝${C.reset}
+${C.bold}${C.green}  ██████╗  █████╗ ██████╗  █████╗      ██╗███████╗██╗███╗   ███╗${C.reset}
+${C.bold}${C.green}  ██╔══██╗██╔══██╗██╔══██╗██╔══██╗     ██║██╔════╝██║████╗ ████║${C.reset}
+${C.bold}${C.green}  ██║  ██║███████║██████╔╝███████║     ██║███████╗██║██╔████╔██║${C.reset}
+${C.bold}${C.green}  ██║  ██║██╔══██║██╔══██╗██╔══██║██   ██║╚════██║██║██║╚██╔╝██║${C.reset}
+${C.bold}${C.red}  ██████╔╝██║  ██║██║  ██║██║  ██║╚█████╔╝███████║██║██║ ╚═╝ ██║${C.reset}
+${C.bold}${C.red}  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚════╝ ╚══════╝╚═╝╚═╝     ╚═╝${C.reset}
 ${C.bold}  DarajaSim Developer Toolkit${C.reset} ${C.dim}v1.0.0${C.reset}
 ${C.dim}  Local M-PESA STK callback simulator — no ngrok needed${C.reset}
 `);

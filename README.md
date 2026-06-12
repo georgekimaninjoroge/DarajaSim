@@ -2,9 +2,18 @@
   <img src="https://raw.githubusercontent.com/georgekimaninjoroge/DarajaSim/main/assets/banner.png" alt="DarajaSim" width="100%"/>
 </p>
 
-# DarajaSim
+<p align="center">
+  <img src="https://img.shields.io/npm/v/darajasim?style=flat-square&color=16a34a&labelColor=1a1814" alt="npm version"/>
+  <img src="https://img.shields.io/npm/dm/darajasim?style=flat-square&color=16a34a&labelColor=1a1814" alt="npm downloads"/>
+  <img src="https://img.shields.io/badge/license-MIT-16a34a?style=flat-square&labelColor=1a1814" alt="MIT license"/>
+  <img src="https://img.shields.io/badge/zero_config-✓-16a34a?style=flat-square&labelColor=1a1814" alt="zero config"/>
+  <img src="https://img.shields.io/badge/M--PESA-Daraja-16a34a?style=flat-square&labelColor=1a1814" alt="M-PESA Daraja"/>
+  <img src="https://img.shields.io/badge/no_ngrok-needed-CC2027?style=flat-square&labelColor=1a1814" alt="no ngrok"/>
+</p>
 
-> Simulate M-PESA STK callbacks on localhost. No ngrok. No HTTPS. No internet.
+<p align="center">
+  Simulate M-PESA STK callbacks on localhost. No ngrok. No HTTPS. No internet.
+</p>
 
 ---
 
@@ -26,8 +35,11 @@ DarajaSim solves it. Fire callbacks directly at localhost with one command.
 
 ```bash
 npm install -g darajasim
+```
 
-# or without installing:
+Or run without installing:
+
+```bash
 npx darajasim <command>
 ```
 
@@ -67,8 +79,6 @@ darajasim trigger --verbose
 ```
 
 ### `darajasim replay` — Replay missed callbacks
-
-When your server was down and callbacks failed, replay them after restart:
 
 ```bash
 darajasim replay
