@@ -1,6 +1,6 @@
 {
   "name": "darajasim",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Simulate M-PESA STK callbacks on localhost. No ngrok. No HTTPS. No internet.",
   "main": "simulator.js",
   "bin": {
