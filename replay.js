@@ -9,7 +9,7 @@ import path from "path";
 import os from "os";
 import * as log from "./logger.js";
 
-const STORE_DIR = path.join(os.homedir(), ".daraja-toolkit");
+const STORE_DIR = path.join(os.homedir(), ".darajasim");
 const QUEUE_FILE = path.join(STORE_DIR, "callback-queue.json");
 const LOG_FILE = path.join(STORE_DIR, "callback-log.json");
 

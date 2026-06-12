@@ -6,11 +6,11 @@
  */
 
 import { Command } from "commander";
-import { simulate } from "../lib/simulator.js";
-import { replayAll, showStatus, clearQueue } from "../lib/replay.js";
-import { startDashboard } from "../lib/dashboard.js";
-import { SCENARIO_NAMES } from "../lib/scenarios.js";
-import * as log from "../lib/logger.js";
+import { simulate } from "./simulator.js";
+import { replayAll, showStatus, clearQueue } from "./replay.js";
+import { startDashboard } from "./dashboard.js";
+import { SCENARIO_NAMES } from "./scenarios.js";
+import * as log from "./logger.js";
 
 const program = new Command();
 
