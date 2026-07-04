@@ -1,0 +1,27 @@
+{
+  "name": "darajasim",
+  "version": "1.0.2",
+  "description": "Simulate M-PESA STK callbacks on localhost. No ngrok. No HTTPS. No internet.",
+  "main": "simulator.js",
+  "bin": {
+    "darajasim": "./daraja.js"
+  },
+  "type": "module",
+  "scripts": {
+    "test": "node daraja.js trigger --amount 100 --phone 0712345678 --port 3000"
+  },
+  "keywords": [
+    "mpesa",
+    "daraja",
+    "safaricom",
+    "stk",
+    "callback",
+    "simulator",
+    "kenya"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^12.1.0"
+  }
+}
